@@ -1,8 +1,10 @@
 from collections import defaultdict
 from datetime import datetime
 
+from sqlalchemy.orm import joinedload
+
 from app.models import Issue, User
-from app.models.issue import CLOSED_STATUSES, STATUS_LABELS
+from app.models.issue import STATUS_LABELS
 
 PRIORITY_RANK = {"URGENT": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
 
@@ -38,7 +40,10 @@ def _issue_payload(i, tag=None):
 
 
 def build_dashboard_data():
-    all_issues = Issue.query.all()
+    # customer/assigned_user는 action_needed 목록 생성 시 접근하므로 미리 JOIN해서 N+1을 방지
+    all_issues = Issue.query.options(
+        joinedload(Issue.customer), joinedload(Issue.assigned_user)
+    ).all()
     open_issues = [i for i in all_issues if i.is_open]
 
     total_count = len(all_issues)

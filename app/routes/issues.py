@@ -5,10 +5,11 @@ import uuid
 from datetime import datetime, timedelta
 
 from flask import (
-    Blueprint, abort, current_app, flash, jsonify, redirect,
+    Blueprint, abort, current_app, flash, redirect,
     render_template, request, send_file, url_for,
 )
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from app.decorators import admin_required, can_access_issue
@@ -18,7 +19,7 @@ from app.models import (
     IssueType, MovingCase, User, Vendor, VendorCommunication,
 )
 from app.models.issue import (
-    CLOSED_STATUSES, DEFAULT_ISSUE_TYPES, LONG_PENDING_HOURS, PRIORITY_LABELS,
+    CLOSED_STATUSES, LONG_PENDING_HOURS, PRIORITY_LABELS,
     SLA_WARNING_HOURS, STATUS_LABELS,
 )
 from app.services.numbering import next_issue_number
@@ -114,17 +115,27 @@ VIEW_TITLES = {
 }
 
 
+ISSUES_PER_PAGE = 25
+
+
 @issues_bp.route("/")
 @login_required
 def list_view():
-    query = _apply_filters(_base_query())
-    issue_list = query.order_by(Issue.occurred_at.desc()).all()
+    query = _apply_filters(_base_query()).options(
+        joinedload(Issue.customer), joinedload(Issue.assigned_user)
+    )
+    page = request.args.get("page", 1, type=int)
+    pagination = query.order_by(Issue.occurred_at.desc()).paginate(
+        page=page, per_page=ISSUES_PER_PAGE, error_out=False
+    )
     staff_users = User.query.filter_by(role="staff").all()
     issue_types = IssueType.query.filter_by(is_active=True).order_by(IssueType.name).all()
     view = request.args.get("view", "")
     return render_template(
         "issues/list.html",
-        issues=issue_list,
+        issues=pagination.items,
+        pagination=pagination,
+        total_count=pagination.total,
         staff_users=staff_users,
         issue_types=issue_types,
         status_labels=STATUS_LABELS,
@@ -137,7 +148,10 @@ def list_view():
 @issues_bp.route("/export.csv")
 @login_required
 def export_csv():
-    query = _apply_filters(_base_query())
+    query = _apply_filters(_base_query()).options(
+        joinedload(Issue.customer), joinedload(Issue.moving_case),
+        joinedload(Issue.assigned_user), joinedload(Issue.vendor),
+    )
     issue_list = query.order_by(Issue.occurred_at.desc()).all()
 
     buf = io.StringIO()

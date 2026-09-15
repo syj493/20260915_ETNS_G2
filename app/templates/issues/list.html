@@ -2,7 +2,7 @@
 {% block title %}이슈 관리{% endblock %}
 {% block body %}
 <div class="page-header">
-  <h1>{{ view_title or '이슈 관리' }} <span style="font-size:13px;color:#888;font-weight:400;">({{ issues|length }}건)</span></h1>
+  <h1>{{ view_title or '이슈 관리' }} <span style="font-size:13px;color:#888;font-weight:400;">({{ total_count }}건)</span></h1>
   <div style="display:flex;gap:8px;">
     <a href="{{ url_for('issues.export_csv', **request.args) }}" class="btn small">CSV 다운로드</a>
     <a href="{{ url_for('issues.new_issue') }}" class="btn primary">+ 이슈 등록</a>
@@ -86,4 +86,16 @@
     {% endfor %}
   </tbody>
 </table>
+
+{% if pagination.pages > 1 %}
+<div class="pagination">
+  {% if pagination.has_prev %}
+  <a href="{{ url_for('issues.list_view', **dict(request.args, page=pagination.prev_num)) }}" class="page-link">← 이전</a>
+  {% endif %}
+  <span class="page-status">{{ pagination.page }} / {{ pagination.pages }} 페이지</span>
+  {% if pagination.has_next %}
+  <a href="{{ url_for('issues.list_view', **dict(request.args, page=pagination.next_num)) }}" class="page-link">다음 →</a>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}

@@ -7,7 +7,7 @@ class CustomerCommunication(db.Model):
     __tablename__ = "customer_communications"
 
     id = db.Column(db.Integer, primary_key=True)
-    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     communication_type = db.Column(db.String(20), nullable=False)  # 전화/이메일/메신저/SMS/기타
     content = db.Column(db.Text, nullable=False)
@@ -20,7 +20,7 @@ class VendorCommunication(db.Model):
     __tablename__ = "vendor_communications"
 
     id = db.Column(db.Integer, primary_key=True)
-    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     content = db.Column(db.Text, nullable=False)
     response_content = db.Column(db.Text)

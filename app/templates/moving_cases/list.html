@@ -17,7 +17,7 @@
       <td>{{ mc.vendor.name if mc.vendor else '-' }}</td>
       <td>{{ mc.assigned_user.name if mc.assigned_user else '-' }}</td>
       <td>{{ mc.status }}</td>
-      <td>{{ mc.issues.count() }}</td>
+      <td>{{ issue_counts.get(mc.id, 0) }}</td>
     </tr>
     {% else %}
     <tr><td colspan="8" style="text-align:center;color:#888;">등록된 이사 건이 없습니다.</td></tr>

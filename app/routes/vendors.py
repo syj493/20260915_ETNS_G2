@@ -1,9 +1,10 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy.orm import joinedload
 
 from app.decorators import admin_required
 from app.extensions import db
-from app.models import Vendor
+from app.models import Issue, Vendor
 
 vendors_bp = Blueprint("vendors", __name__)
 
@@ -47,8 +48,12 @@ def new_vendor():
 @admin_required
 def detail(vendor_id):
     vendor = Vendor.query.get_or_404(vendor_id)
-    from app.models import Issue
-    related_issues = Issue.query.filter_by(vendor_id=vendor.id).order_by(Issue.occurred_at.desc()).all()
+    related_issues = (
+        Issue.query.options(joinedload(Issue.customer))
+        .filter_by(vendor_id=vendor.id)
+        .order_by(Issue.occurred_at.desc())
+        .all()
+    )
     total = len(related_issues)
     sla_over = sum(1 for i in related_issues if i.is_sla_breached)
     resolved = [i for i in related_issues if i.resolved_at]

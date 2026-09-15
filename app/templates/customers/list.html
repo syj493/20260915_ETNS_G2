@@ -15,7 +15,7 @@
       <td>{{ c.email or '-' }}</td>
       <td>{{ c.phone or '-' }}</td>
       <td>{{ c.nationality or '-' }}</td>
-      <td>{{ c.moving_cases.count() }}</td>
+      <td>{{ case_counts.get(c.id, 0) }}</td>
     </tr>
     {% else %}
     <tr><td colspan="6" style="text-align:center;color:#888;">등록된 고객이 없습니다.</td></tr>

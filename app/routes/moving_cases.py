@@ -2,10 +2,12 @@ from datetime import datetime
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 from app.decorators import admin_required
 from app.extensions import db
-from app.models import Customer, MovingCase, User, Vendor
+from app.models import Customer, Issue, MovingCase, User, Vendor
 from app.services.numbering import next_case_number
 
 moving_cases_bp = Blueprint("moving_cases", __name__)
@@ -24,8 +26,22 @@ def _parse_date(value):
 @login_required
 @admin_required
 def list_view():
-    cases = MovingCase.query.order_by(MovingCase.created_at.desc()).all()
-    return render_template("moving_cases/list.html", cases=cases)
+    cases = (
+        MovingCase.query.options(
+            joinedload(MovingCase.customer),
+            joinedload(MovingCase.vendor),
+            joinedload(MovingCase.assigned_user),
+        )
+        .order_by(MovingCase.created_at.desc())
+        .all()
+    )
+    # mc.issues.count()를 건별로 호출하면 N+1이 발생하므로 한 번의 GROUP BY로 미리 집계
+    issue_counts = dict(
+        db.session.query(Issue.moving_case_id, func.count(Issue.id))
+        .group_by(Issue.moving_case_id)
+        .all()
+    )
+    return render_template("moving_cases/list.html", cases=cases, issue_counts=issue_counts)
 
 
 @moving_cases_bp.route("/new", methods=["GET", "POST"])

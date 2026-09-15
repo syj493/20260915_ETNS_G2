@@ -20,7 +20,7 @@ class IssueLog(db.Model):
     __tablename__ = "issue_logs"
 
     id = db.Column(db.Integer, primary_key=True)
-    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
     action_type = db.Column(db.String(30), nullable=False)
     content = db.Column(db.Text)

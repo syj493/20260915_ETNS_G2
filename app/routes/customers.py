@@ -1,9 +1,10 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
+from sqlalchemy import func
 
 from app.decorators import admin_required
 from app.extensions import db
-from app.models import Customer
+from app.models import Customer, MovingCase
 
 customers_bp = Blueprint("customers", __name__)
 
@@ -13,7 +14,13 @@ customers_bp = Blueprint("customers", __name__)
 @admin_required
 def list_view():
     customers = Customer.query.order_by(Customer.created_at.desc()).all()
-    return render_template("customers/list.html", customers=customers)
+    # c.moving_cases.count()를 건별로 호출하면 N+1이 발생하므로 한 번의 GROUP BY로 미리 집계
+    case_counts = dict(
+        db.session.query(MovingCase.customer_id, func.count(MovingCase.id))
+        .group_by(MovingCase.customer_id)
+        .all()
+    )
+    return render_template("customers/list.html", customers=customers, case_counts=case_counts)
 
 
 @customers_bp.route("/new", methods=["GET", "POST"])

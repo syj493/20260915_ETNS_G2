@@ -7,7 +7,7 @@ class Attachment(db.Model):
     __tablename__ = "attachments"
 
     id = db.Column(db.Integer, primary_key=True)
-    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False)
+    issue_id = db.Column(db.Integer, db.ForeignKey("issues.id"), nullable=False, index=True)
     uploaded_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     original_filename = db.Column(db.String(255), nullable=False)
     stored_filename = db.Column(db.String(255), nullable=False)
