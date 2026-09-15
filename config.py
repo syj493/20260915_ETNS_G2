@@ -10,6 +10,6 @@ class Config:
         "DATABASE_URL", f"sqlite:///{BASE_DIR / 'moving_cs.db'}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    UPLOAD_FOLDER = str(BASE_DIR / "uploads")
+    UPLOAD_FOLDER = "/tmp/uploads" if os.environ.get("VERCEL") else str(BASE_DIR / "uploads")
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20MB
     ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "pdf", "xlsx", "docx"}
