@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }} - 고객 상세{% endblock %}
+{% block body %}
+<div class="page-header"><h1>{{ customer.name }}</h1></div>
+<div class="meta-grid panel" style="margin-bottom:16px;">
+  <div class="meta-item"><div class="label">사번</div><div class="value">{{ customer.employee_id or '-' }}</div></div>
+  <div class="meta-item"><div class="label">이메일</div><div class="value">{{ customer.email or '-' }}</div></div>
+  <div class="meta-item"><div class="label">전화번호</div><div class="value">{{ customer.phone or '-' }}</div></div>
+  <div class="meta-item"><div class="label">국적</div><div class="value">{{ customer.nationality or '-' }}</div></div>
+</div>
+<div class="panel">
+  <h3>이사 건</h3>
+  <table class="data-table">
+    <thead><tr><th>건번호</th><th>경로</th><th>예정일</th><th>상태</th></tr></thead>
+    <tbody>
+      {% for mc in customer.moving_cases %}
+      <tr class="clickable" onclick="location.href='{{ url_for('moving_cases.detail', case_id=mc.id) }}'">
+        <td>{{ mc.case_number }}</td><td>{{ mc.route }}</td>
+        <td>{{ mc.scheduled_date or '-' }}</td><td>{{ mc.status }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="text-align:center;color:#888;">등록된 이사 건이 없습니다.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

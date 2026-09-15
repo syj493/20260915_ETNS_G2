@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ case.case_number }} - 이사 건 상세{% endblock %}
+{% block body %}
+<div class="page-header"><h1>{{ case.case_number }} · {{ case.route }}</h1></div>
+<div class="meta-grid panel" style="margin-bottom:16px;">
+  <div class="meta-item"><div class="label">고객</div><div class="value">{{ case.customer.name if case.customer else '-' }}</div></div>
+  <div class="meta-item"><div class="label">업체</div><div class="value">{{ case.vendor.name if case.vendor else '-' }}</div></div>
+  <div class="meta-item"><div class="label">담당자</div><div class="value">{{ case.assigned_user.name if case.assigned_user else '-' }}</div></div>
+  <div class="meta-item"><div class="label">상태</div><div class="value">{{ case.status }}</div></div>
+  <div class="meta-item"><div class="label">이사 예정일</div><div class="value">{{ case.scheduled_date or '-' }}</div></div>
+  <div class="meta-item"><div class="label">실제 이사일</div><div class="value">{{ case.actual_moving_date or '-' }}</div></div>
+  <div class="meta-item"><div class="label">예상 도착일</div><div class="value">{{ case.estimated_arrival_date or '-' }}</div></div>
+  <div class="meta-item"><div class="label">실제 도착일</div><div class="value">{{ case.actual_arrival_date or '-' }}</div></div>
+</div>
+<div class="panel">
+  <h3>발생 이슈</h3>
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>제목</th><th>유형</th><th>우선순위</th><th>상태</th></tr></thead>
+    <tbody>
+      {% for i in case.issues %}
+      <tr class="clickable" onclick="location.href='{{ url_for('issues.detail', issue_id=i.id) }}'">
+        <td>{{ i.issue_number }}</td><td>{{ i.title }}</td><td>{{ i.issue_type }}</td>
+        <td><span class="badge-priority {{ i.priority }}">{{ i.priority_display }}</span></td>
+        <td><span class="badge-status {{ i.status }}">{{ i.status_display }}</span></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="text-align:center;color:#888;">등록된 이슈가 없습니다.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

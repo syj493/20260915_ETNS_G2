@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}고객 등록{% endblock %}
+{% block body %}
+<div class="page-header"><h1>고객 등록</h1></div>
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid">
+    <div class="form-field"><label>사번</label><input type="text" name="employee_id"></div>
+    <div class="form-field"><label>이름 *</label><input type="text" name="name" required></div>
+    <div class="form-field"><label>이메일</label><input type="email" name="email"></div>
+    <div class="form-field"><label>전화번호</label><input type="text" name="phone"></div>
+    <div class="form-field"><label>국적</label><input type="text" name="nationality"></div>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">등록</button>
+    <a href="{{ url_for('customers.list_view') }}" class="btn">취소</a>
+  </div>
+</form>
+{% endblock %}

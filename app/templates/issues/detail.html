@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}{{ issue.issue_number }} - 이슈 상세{% endblock %}
+{% block body %}
+<div class="issue-head">
+  <div>
+    <div class="num">{{ issue.issue_number }}</div>
+    <h1>{{ issue.title }}</h1>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge-priority {{ issue.priority }}">{{ issue.priority_display }}</span>
+    <span class="badge-status {{ issue.status }}">{{ issue.status_display }}</span>
+    {% if issue.is_sla_breached %}<span class="badge-sla">⚠ SLA 초과</span>
+    {% elif issue.is_sla_warning %}<span class="badge-sla warning">⏰ SLA 임박 ({{ issue.hours_until_due }}h)</span>
+    {% endif %}
+    {% if issue.is_long_pending %}<span class="badge-sla warning">장기 미처리</span>{% endif %}
+  </div>
+</div>
+
+<div class="meta-grid panel">
+  <div class="meta-item"><div class="label">고객</div><div class="value">{{ issue.customer.name if issue.customer else '-' }}</div></div>
+  <div class="meta-item"><div class="label">이사 건</div><div class="value">{{ issue.moving_case.route if issue.moving_case else '-' }}</div></div>
+  <div class="meta-item"><div class="label">이슈 유형</div><div class="value">{{ issue.issue_type }}</div></div>
+  <div class="meta-item"><div class="label">관련 업체</div><div class="value">{{ issue.vendor.name if issue.vendor else '-' }}</div></div>
+  <div class="meta-item"><div class="label">담당자</div><div class="value">{{ issue.assigned_user.name if issue.assigned_user else '미배정' }}</div></div>
+  <div class="meta-item"><div class="label">발생일</div><div class="value">{{ issue.occurred_at.strftime('%Y-%m-%d %H:%M') if issue.occurred_at else '-' }}</div></div>
+  <div class="meta-item"><div class="label">처리기한</div><div class="value">{{ issue.due_at.strftime('%Y-%m-%d %H:%M') if issue.due_at else '-' }}</div></div>
+  <div class="meta-item"><div class="label">해결일</div><div class="value">{{ issue.resolved_at.strftime('%Y-%m-%d %H:%M') if issue.resolved_at else '-' }}</div></div>
+</div>
+
+<div class="panel" style="margin-bottom:16px;">
+  <h3>제어</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:20px;">
+    <form class="inline-form" action="{{ url_for('issues.change_status', issue_id=issue.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label style="font-size:12px;color:#888;">상태</label>
+      <select name="status">
+        {% for code, label in status_labels.items() %}
+        <option value="{{ code }}" {{ 'selected' if issue.status == code }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">변경</button>
+    </form>
+
+    {% if current_user.is_admin %}
+    <form class="inline-form" action="{{ url_for('issues.change_priority', issue_id=issue.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label style="font-size:12px;color:#888;">우선순위</label>
+      <select name="priority">
+        {% for code in ['URGENT','HIGH','MEDIUM','LOW'] %}
+        <option value="{{ code }}" {{ 'selected' if issue.priority == code }}>{{ code }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">변경</button>
+    </form>
+
+    <form class="inline-form" action="{{ url_for('issues.change_assignee', issue_id=issue.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label style="font-size:12px;color:#888;">담당자</label>
+      <select name="assigned_user_id">
+        <option value="">미배정</option>
+        {% for u in staff_users %}
+        <option value="{{ u.id }}" {{ 'selected' if issue.assigned_user_id == u.id }}>{{ u.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">변경</button>
+    </form>
+
+    <form class="inline-form" action="{{ url_for('issues.change_vendor', issue_id=issue.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label style="font-size:12px;color:#888;">업체</label>
+      <select name="vendor_id">
+        <option value="">미지정</option>
+        {% for v in vendors %}
+        <option value="{{ v.id }}" {{ 'selected' if issue.vendor_id == v.id }}>{{ v.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">변경</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="active" onclick="showTab('timeline')">Timeline</button>
+  <button onclick="showTab('customer')">고객 응대</button>
+  <button onclick="showTab('vendor')">업체 문의</button>
+  <button onclick="showTab('files')">첨부파일 ({{ issue.attachments.count() }})</button>
+</div>
+
+<div id="tab-timeline" class="tab-panel active panel">
+  <div class="timeline">
+    {% for log in issue.logs %}
+    <div class="tl-item">
+      <div class="tl-time">{{ log.created_at.strftime('%m/%d %H:%M') }} · {{ log.user.name if log.user else '-' }}</div>
+      <div class="tl-action">{{ log.action_label }}</div>
+      <div class="tl-content">{{ log.content }}</div>
+    </div>
+    {% else %}
+    <p style="color:#888;">기록이 없습니다.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="tab-customer" class="tab-panel panel">
+  <form method="post" action="{{ url_for('issues.add_customer_communication', issue_id=issue.id) }}" style="margin-bottom:18px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <div class="form-field">
+        <label>응대 방법</label>
+        <select name="communication_type">
+          <option>전화</option><option>이메일</option><option>메신저</option><option>SMS</option><option>기타</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-field" style="margin-top:10px;">
+      <label>응대 내용</label>
+      <textarea name="content" rows="3" placeholder="고객에게 안내한 내용을 기록하세요" required></textarea>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn primary small">기록 추가</button></div>
+  </form>
+  {% for c in issue.customer_communications %}
+  <div class="comm-item">
+    <div class="comm-meta">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }} · {{ c.user.name if c.user else '-' }} · {{ c.communication_type }}</div>
+    <div class="comm-content">{{ c.content }}</div>
+  </div>
+  {% else %}
+  <p style="color:#888;">고객 응대 기록이 없습니다.</p>
+  {% endfor %}
+</div>
+
+<div id="tab-vendor" class="tab-panel panel">
+  <form method="post" action="{{ url_for('issues.add_vendor_inquiry', issue_id=issue.id) }}" style="margin-bottom:18px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-field">
+      <label>업체 문의 내용</label>
+      <textarea name="content" rows="3" placeholder="업체에 확인 요청할 내용을 입력하세요" required></textarea>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn primary small">문의 등록</button></div>
+  </form>
+  {% for vc in issue.vendor_communications %}
+  <div class="comm-item">
+    <div class="comm-meta">문의 {{ vc.requested_at.strftime('%Y-%m-%d %H:%M') }} · {{ vc.user.name if vc.user else '-' }} · <span class="badge-status {{ 'RESOLVED' if vc.status == '답변 완료' else 'WAITING_VENDOR' }}">{{ vc.status }}</span></div>
+    <div class="comm-content">{{ vc.content }}</div>
+    {% if vc.response_content %}
+    <div class="comm-response"><b>업체 답변</b> ({{ vc.responded_at.strftime('%Y-%m-%d %H:%M') }})<br>{{ vc.response_content }}</div>
+    {% else %}
+    <form method="post" action="{{ url_for('issues.add_vendor_response', issue_id=issue.id, vc_id=vc.id) }}" style="margin-top:8px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <textarea name="response_content" rows="2" placeholder="업체로부터 받은 답변을 입력하세요" required style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;"></textarea>
+      <div class="form-actions"><button type="submit" class="btn small">답변 등록</button></div>
+    </form>
+    {% endif %}
+  </div>
+  {% else %}
+  <p style="color:#888;">업체 문의 기록이 없습니다.</p>
+  {% endfor %}
+</div>
+
+<div id="tab-files" class="tab-panel panel">
+  <form method="post" action="{{ url_for('issues.upload_attachment', issue_id=issue.id) }}" enctype="multipart/form-data" style="margin-bottom:18px;display:flex;gap:10px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="file" name="file" required>
+    <button type="submit" class="btn primary small">업로드</button>
+  </form>
+  <p style="color:#888;font-size:12px;margin-top:-10px;">허용 확장자: jpg, jpeg, png, pdf, xlsx, docx</p>
+  {% for att in issue.attachments %}
+  <div class="attachment-item">
+    <a href="{{ url_for('issues.download_attachment', issue_id=issue.id, att_id=att.id) }}">📎 {{ att.original_filename }}</a>
+    <span style="color:#888;font-size:12px;">{{ (att.file_size / 1024) | round(1) }} KB · {{ att.uploader.name if att.uploader else '-' }} · {{ att.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+  </div>
+  {% else %}
+  <p style="color:#888;">첨부된 파일이 없습니다.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function showTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+{% endblock %}

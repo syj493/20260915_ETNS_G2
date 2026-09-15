@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}이사 건 등록{% endblock %}
+{% block body %}
+<div class="page-header"><h1>이사 건 등록</h1></div>
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid">
+    <div class="form-field">
+      <label>고객 *</label>
+      <select name="customer_id" required>
+        <option value="">선택</option>
+        {% for c in customers %}
+        <option value="{{ c.id }}">{{ c.name }} ({{ c.employee_id or '-' }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>업체</label>
+      <select name="vendor_id"><option value="">미지정</option>
+        {% for v in vendors %}<option value="{{ v.id }}">{{ v.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-field"><label>출발 국가</label><input type="text" name="departure_country"></div>
+    <div class="form-field"><label>출발 도시</label><input type="text" name="departure_city"></div>
+    <div class="form-field"><label>도착 국가</label><input type="text" name="arrival_country"></div>
+    <div class="form-field"><label>도착 도시</label><input type="text" name="arrival_city"></div>
+    <div class="form-field"><label>이사 예정일</label><input type="date" name="scheduled_date"></div>
+    <div class="form-field"><label>실제 이사일</label><input type="date" name="actual_moving_date"></div>
+    <div class="form-field"><label>예상 도착일</label><input type="date" name="estimated_arrival_date"></div>
+    <div class="form-field"><label>실제 도착일</label><input type="date" name="actual_arrival_date"></div>
+    <div class="form-field">
+      <label>담당자</label>
+      <select name="assigned_user_id"><option value="">미배정</option>
+        {% for u in staff_users %}<option value="{{ u.id }}">{{ u.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>상태</label>
+      <select name="status">
+        <option value="IN_PROGRESS">진행중</option>
+        <option value="COMPLETED">완료</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">등록</button>
+    <a href="{{ url_for('moving_cases.list_view') }}" class="btn">취소</a>
+  </div>
+</form>
+{% endblock %}

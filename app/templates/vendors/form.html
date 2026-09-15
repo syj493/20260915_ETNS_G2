@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}업체 등록{% endblock %}
+{% block body %}
+<div class="page-header"><h1>업체 등록</h1></div>
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid">
+    <div class="form-field"><label>업체명 *</label><input type="text" name="name" required></div>
+    <div class="form-field"><label>국가</label><input type="text" name="country"></div>
+    <div class="form-field"><label>도시</label><input type="text" name="city"></div>
+    <div class="form-field"><label>담당자명</label><input type="text" name="contact_name"></div>
+    <div class="form-field"><label>이메일</label><input type="email" name="email"></div>
+    <div class="form-field"><label>전화번호</label><input type="text" name="phone"></div>
+    <div class="form-field"><label>서비스 지역</label><input type="text" name="service_area"></div>
+    <div class="form-field">
+      <label>활성 여부</label>
+      <select name="is_active"><option value="1" selected>활성</option><option value="">비활성</option></select>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">등록</button>
+    <a href="{{ url_for('vendors.list_view') }}" class="btn">취소</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}이슈 등록{% endblock %}
+{% block body %}
+<div class="page-header"><h1>이슈 등록</h1></div>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid">
+    <div class="form-field">
+      <label>이사 건 *</label>
+      <select name="moving_case_id" required>
+        <option value="">선택</option>
+        {% for mc in moving_cases %}
+        <option value="{{ mc.id }}">{{ mc.case_number }} · {{ mc.customer.name }} ({{ mc.route }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>이슈 유형 *</label>
+      <select name="issue_type" required>
+        <option value="">선택</option>
+        {% for t in issue_types %}
+        <option value="{{ t.name }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>우선순위 *</label>
+      <select name="priority" required>
+        <option value="URGENT">🔴 긴급 (URGENT)</option>
+        <option value="HIGH">🟠 높음 (HIGH)</option>
+        <option value="MEDIUM" selected>🟡 보통 (MEDIUM)</option>
+        <option value="LOW">⚪ 낮음 (LOW)</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>담당자</label>
+      <select name="assigned_user_id">
+        <option value="">미배정</option>
+        {% for u in staff_users %}
+        <option value="{{ u.id }}">{{ u.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>관련 업체</label>
+      <select name="vendor_id">
+        <option value="">이사 건의 업체 사용</option>
+        {% for v in vendors %}
+        <option value="{{ v.id }}">{{ v.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>발생 일시</label>
+      <input type="datetime-local" name="occurred_at">
+    </div>
+    <div class="form-field" style="grid-column:1/-1;">
+      <label>이슈 제목 *</label>
+      <input type="text" name="title" required placeholder="예: 뉴욕 현지 배송 일정 지연">
+    </div>
+    <div class="form-field" style="grid-column:1/-1;">
+      <label>이슈 내용</label>
+      <textarea name="description" rows="5" placeholder="상세 내용을 입력하세요"></textarea>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">등록</button>
+    <a href="{{ url_for('issues.list_view') }}" class="btn">취소</a>
+  </div>
+</form>
+{% endblock %}

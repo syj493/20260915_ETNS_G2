@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}로그인 - Moving CS Control Tower{% endblock %}
+{% block auth_body %}
+<div class="login-page">
+  <div class="login-card">
+    <h1>🗼 Moving CS<br>Control Tower</h1>
+    <p class="login-sub">해외이사 이슈·CS 통합 관리 시스템</p>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="email">이메일</label>
+      <input type="text" id="email" name="email" autofocus required>
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" name="password" required>
+      <button type="submit" class="btn-submit">로그인</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}이사 건 관리{% endblock %}
+{% block body %}
+<div class="page-header">
+  <h1>이사 건 관리 <span style="font-size:13px;color:#888;font-weight:400;">({{ cases|length }}건)</span></h1>
+  <a href="{{ url_for('moving_cases.new_case') }}" class="btn primary">+ 이사 건 등록</a>
+</div>
+<table class="data-table">
+  <thead><tr><th>건번호</th><th>고객</th><th>경로</th><th>예정일</th><th>업체</th><th>담당자</th><th>상태</th><th>이슈</th></tr></thead>
+  <tbody>
+    {% for mc in cases %}
+    <tr class="clickable" onclick="location.href='{{ url_for('moving_cases.detail', case_id=mc.id) }}'">
+      <td>{{ mc.case_number }}</td>
+      <td>{{ mc.customer.name if mc.customer else '-' }}</td>
+      <td>{{ mc.route }}</td>
+      <td>{{ mc.scheduled_date or '-' }}</td>
+      <td>{{ mc.vendor.name if mc.vendor else '-' }}</td>
+      <td>{{ mc.assigned_user.name if mc.assigned_user else '-' }}</td>
+      <td>{{ mc.status }}</td>
+      <td>{{ mc.issues.count() }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" style="text-align:center;color:#888;">등록된 이사 건이 없습니다.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

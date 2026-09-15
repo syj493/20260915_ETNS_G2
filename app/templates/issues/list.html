@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}이슈 관리{% endblock %}
+{% block body %}
+<div class="page-header">
+  <h1>{{ view_title or '이슈 관리' }} <span style="font-size:13px;color:#888;font-weight:400;">({{ issues|length }}건)</span></h1>
+  <div style="display:flex;gap:8px;">
+    <a href="{{ url_for('issues.export_csv', **request.args) }}" class="btn small">CSV 다운로드</a>
+    <a href="{{ url_for('issues.new_issue') }}" class="btn primary">+ 이슈 등록</a>
+  </div>
+</div>
+
+<div class="quick-filters">
+  <a href="{{ url_for('issues.list_view', view='urgent') }}" class="qf {{ 'active' if filters.get('view') == 'urgent' }}">🔴 긴급</a>
+  <a href="{{ url_for('issues.list_view', view='sla_warning') }}" class="qf {{ 'active' if filters.get('view') == 'sla_warning' }}">⏰ SLA 임박</a>
+  <a href="{{ url_for('issues.list_view', view='sla_over') }}" class="qf {{ 'active' if filters.get('view') == 'sla_over' }}">⚠ SLA 초과</a>
+  <a href="{{ url_for('issues.list_view', view='waiting_vendor') }}" class="qf {{ 'active' if filters.get('view') == 'waiting_vendor' }}">업체 답변 대기</a>
+  <a href="{{ url_for('issues.list_view', view='waiting_customer') }}" class="qf {{ 'active' if filters.get('view') == 'waiting_customer' }}">고객 답변 대기</a>
+  <a href="{{ url_for('issues.list_view', view='long_pending') }}" class="qf {{ 'active' if filters.get('view') == 'long_pending' }}">장기 미처리</a>
+  <a href="{{ url_for('issues.list_view', view='unassigned') }}" class="qf {{ 'active' if filters.get('view') == 'unassigned' }}">미배정</a>
+  {% if filters.get('view') %}<a href="{{ url_for('issues.list_view') }}" class="qf clear">✕ 필터 해제</a>{% endif %}
+</div>
+
+<form class="filter-bar" method="get">
+  <input type="hidden" name="view" value="{{ filters.get('view', '') }}">
+  <input type="text" name="q" placeholder="이슈ID/고객명/제목/내용 검색" value="{{ filters.get('q', '') }}">
+  <select name="status">
+    <option value="">상태 전체</option>
+    {% for code, label in status_labels.items() %}
+    <option value="{{ code }}" {{ 'selected' if filters.get('status') == code }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="issue_type">
+    <option value="">유형 전체</option>
+    {% for t in issue_types %}
+    <option value="{{ t.name }}" {{ 'selected' if filters.get('issue_type') == t.name }}>{{ t.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="priority">
+    <option value="">우선순위 전체</option>
+    {% for code in ['URGENT','HIGH','MEDIUM','LOW'] %}
+    <option value="{{ code }}" {{ 'selected' if filters.get('priority') == code }}>{{ code }}</option>
+    {% endfor %}
+  </select>
+  {% if current_user.is_admin %}
+  <select name="assignee_id">
+    <option value="">담당자 전체</option>
+    {% for u in staff_users %}
+    <option value="{{ u.id }}" {{ 'selected' if filters.get('assignee_id')|string == u.id|string }}>{{ u.name }}</option>
+    {% endfor %}
+  </select>
+  {% endif %}
+  <select name="period">
+    <option value="">기간 전체</option>
+    <option value="today" {{ 'selected' if filters.get('period') == 'today' }}>오늘</option>
+    <option value="7d" {{ 'selected' if filters.get('period') == '7d' }}>최근 7일</option>
+    <option value="30d" {{ 'selected' if filters.get('period') == '30d' }}>최근 30일</option>
+    <option value="month" {{ 'selected' if filters.get('period') == 'month' }}>이번 달</option>
+  </select>
+  <button type="submit" class="btn small">검색</button>
+</form>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>ID</th><th>고객</th><th>유형</th><th>우선순위</th><th>상태</th><th>담당자</th><th>발생일</th><th>SLA</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for issue in issues %}
+    <tr class="clickable" onclick="location.href='{{ url_for('issues.detail', issue_id=issue.id) }}'">
+      <td>{{ issue.issue_number }}</td>
+      <td>{{ issue.customer.name if issue.customer else '-' }}</td>
+      <td>{{ issue.issue_type }}</td>
+      <td><span class="badge-priority {{ issue.priority }}">{{ issue.priority_display }}</span></td>
+      <td><span class="badge-status {{ issue.status }}">{{ issue.status_display }}</span></td>
+      <td>{{ issue.assigned_user.name if issue.assigned_user else '미배정' }}</td>
+      <td>{{ issue.occurred_at.strftime('%Y-%m-%d %H:%M') if issue.occurred_at else '-' }}</td>
+      <td>
+        {% if issue.is_sla_breached %}<span class="badge-sla">초과</span>
+        {% elif issue.is_sla_warning %}<span class="badge-sla warning">임박</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" style="text-align:center;color:#888;">조건에 맞는 이슈가 없습니다.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

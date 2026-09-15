@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}업체 관리{% endblock %}
+{% block body %}
+<div class="page-header">
+  <h1>업체 관리 <span style="font-size:13px;color:#888;font-weight:400;">({{ vendors|length }}개)</span></h1>
+  <a href="{{ url_for('vendors.new_vendor') }}" class="btn primary">+ 업체 등록</a>
+</div>
+<table class="data-table">
+  <thead><tr><th>업체명</th><th>국가/도시</th><th>담당자</th><th>연락처</th><th>서비스 지역</th><th>상태</th></tr></thead>
+  <tbody>
+    {% for v in vendors %}
+    <tr class="clickable" onclick="location.href='{{ url_for('vendors.detail', vendor_id=v.id) }}'">
+      <td>{{ v.name }}</td>
+      <td>{{ v.country or '-' }} {{ v.city or '' }}</td>
+      <td>{{ v.contact_name or '-' }}</td>
+      <td>{{ v.email or v.phone or '-' }}</td>
+      <td>{{ v.service_area or '-' }}</td>
+      <td>{{ '활성' if v.is_active else '비활성' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" style="text-align:center;color:#888;">등록된 업체가 없습니다.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

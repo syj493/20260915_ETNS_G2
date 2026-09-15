@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ vendor.name }} - 업체 상세{% endblock %}
+{% block body %}
+<div class="page-header"><h1>{{ vendor.name }}</h1></div>
+
+<div class="kpi-row">
+  <div class="kpi-card"><div class="label">전체 이슈</div><div class="value">{{ total }}건</div></div>
+  <div class="kpi-card sla"><div class="label">SLA 초과</div><div class="value">{{ sla_over }}건</div></div>
+  <div class="kpi-card"><div class="label">평균 처리시간</div><div class="value">{{ avg_hours if avg_hours is not none else '-' }}{{ 'h' if avg_hours is not none else '' }}</div></div>
+  <div class="kpi-card"><div class="label">SLA 준수율</div><div class="value">{{ sla_rate if sla_rate is not none else '-' }}{{ '%' if sla_rate is not none else '' }}</div></div>
+</div>
+
+<div class="panel">
+  <h3>관련 이슈</h3>
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>고객</th><th>유형</th><th>우선순위</th><th>상태</th><th>발생일</th></tr></thead>
+    <tbody>
+      {% for i in issues %}
+      <tr class="clickable" onclick="location.href='{{ url_for('issues.detail', issue_id=i.id) }}'">
+        <td>{{ i.issue_number }}</td>
+        <td>{{ i.customer.name if i.customer else '-' }}</td>
+        <td>{{ i.issue_type }}</td>
+        <td><span class="badge-priority {{ i.priority }}">{{ i.priority_display }}</span></td>
+        <td><span class="badge-status {{ i.status }}">{{ i.status_display }}</span></td>
+        <td>{{ i.occurred_at.strftime('%Y-%m-%d') if i.occurred_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" style="text-align:center;color:#888;">관련 이슈가 없습니다.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
