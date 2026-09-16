@@ -248,6 +248,84 @@ def new_issue():
     )
 
 
+@issues_bp.route("/<int:issue_id>/edit", methods=["GET", "POST"])
+@login_required
+@admin_required
+def edit_issue(issue_id):
+    issue = Issue.query.get_or_404(issue_id)
+
+    if request.method == "POST":
+        title = request.form.get("title", "").strip()
+        issue_type = request.form.get("issue_type")
+        description = request.form.get("description", "").strip()
+        occurred_at_raw = request.form.get("occurred_at")
+
+        if not title or not issue_type:
+            flash("제목과 이슈 유형은 필수입니다.", "error")
+            return redirect(url_for("issues.edit_issue", issue_id=issue_id))
+
+        occurred_at = issue.occurred_at
+        if occurred_at_raw:
+            try:
+                occurred_at = datetime.strptime(occurred_at_raw, "%Y-%m-%dT%H:%M")
+            except ValueError:
+                pass
+
+        old_occurred_display = issue.occurred_at.strftime("%Y-%m-%d %H:%M") if issue.occurred_at else "-"
+        new_occurred_display = occurred_at.strftime("%Y-%m-%d %H:%M") if occurred_at else "-"
+
+        changes = []
+        if title != issue.title:
+            changes.append(f"제목: {issue.title} → {title}")
+        if issue_type != issue.issue_type:
+            changes.append(f"유형: {issue.issue_type} → {issue_type}")
+        if old_occurred_display != new_occurred_display:
+            changes.append(f"발생일: {old_occurred_display} → {new_occurred_display}")
+
+        issue.title = title
+        issue.issue_type = issue_type
+        issue.description = description
+        issue.occurred_at = occurred_at
+        issue.recompute_due_at()
+
+        if changes:
+            db.session.add(IssueLog(
+                issue_id=issue.id, user_id=current_user.id, action_type="edited",
+                content=" / ".join(changes),
+            ))
+        db.session.commit()
+        flash("이슈 정보가 수정되었습니다.", "success")
+        return redirect(url_for("issues.detail", issue_id=issue_id))
+
+    issue_types = IssueType.query.filter_by(is_active=True).order_by(IssueType.name).all()
+    return render_template("issues/edit.html", issue=issue, issue_types=issue_types)
+
+
+@issues_bp.route("/<int:issue_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def delete_issue(issue_id):
+    issue = Issue.query.get_or_404(issue_id)
+    issue_number = issue.issue_number
+
+    for att in Attachment.query.filter_by(issue_id=issue.id).all():
+        try:
+            if os.path.exists(att.file_path):
+                os.remove(att.file_path)
+        except OSError:
+            pass
+        db.session.delete(att)
+
+    IssueLog.query.filter_by(issue_id=issue.id).delete()
+    CustomerCommunication.query.filter_by(issue_id=issue.id).delete()
+    VendorCommunication.query.filter_by(issue_id=issue.id).delete()
+    db.session.delete(issue)
+    db.session.commit()
+
+    flash(f"이슈 {issue_number}가 삭제되었습니다.", "success")
+    return redirect(url_for("issues.list_view"))
+
+
 @issues_bp.route("/<int:issue_id>")
 @login_required
 def detail(issue_id):
@@ -277,10 +355,14 @@ def change_status(issue_id):
     issue.status = new_status
     if new_status == "RESOLVED" and not issue.resolved_at:
         issue.resolved_at = datetime.utcnow()
-    if new_status == "CLOSED" and not issue.closed_at:
+    elif new_status == "CLOSED" and not issue.closed_at:
         issue.closed_at = datetime.utcnow()
         if not issue.resolved_at:
             issue.resolved_at = issue.closed_at
+    elif new_status not in CLOSED_STATUSES:
+        # 잘못 눌러서 해결/종결로 바꿨다가 되돌리는 경우, 남아있는 처리완료 시각을 정리한다.
+        issue.resolved_at = None
+        issue.closed_at = None
 
     db.session.add(IssueLog(
         issue_id=issue.id, user_id=current_user.id, action_type="status_changed",

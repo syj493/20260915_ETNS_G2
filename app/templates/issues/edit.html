@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}이슈 수정 - {{ issue.issue_number }}{% endblock %}
+{% block body %}
+<div class="page-header"><h1>이슈 수정 · {{ issue.issue_number }}</h1></div>
+
+<form method="post" class="panel">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="form-grid">
+    <div class="form-field">
+      <label>이슈 유형 *</label>
+      <select name="issue_type" required>
+        {% for t in issue_types %}
+        <option value="{{ t.name }}" {{ 'selected' if issue.issue_type == t.name }}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-field">
+      <label>발생 일시</label>
+      <input type="datetime-local" name="occurred_at" value="{{ issue.occurred_at.strftime('%Y-%m-%dT%H:%M') if issue.occurred_at else '' }}">
+    </div>
+    <div class="form-field" style="grid-column:1/-1;">
+      <label>이슈 제목 *</label>
+      <input type="text" name="title" required value="{{ issue.title }}">
+    </div>
+    <div class="form-field" style="grid-column:1/-1;">
+      <label>이슈 내용</label>
+      <textarea name="description" rows="5">{{ issue.description or '' }}</textarea>
+    </div>
+  </div>
+  <p class="panel-sub" style="margin-top:14px;">
+    우선순위·상태·담당자·업체는 이슈 상세 화면의 "제어" 영역에서 변경할 수 있습니다.
+  </p>
+  <div class="form-actions">
+    <button type="submit" class="btn primary">저장</button>
+    <a href="{{ url_for('issues.detail', issue_id=issue.id) }}" class="btn">취소</a>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('issues.delete_issue', issue_id=issue.id) }}"
+      class="panel" style="margin-top:16px;border:1px solid var(--danger-soft);"
+      onsubmit="return confirm('이슈 {{ issue.issue_number }}를 삭제하시겠습니까?\n첨부파일과 처리 이력이 모두 함께 삭제되며 되돌릴 수 없습니다.');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h3 style="color:var(--danger);margin-top:0;">위험 구역</h3>
+  <p class="panel-sub" style="margin-bottom:14px;">이슈를 삭제하면 Timeline, 고객 응대, 업체 문의, 첨부파일이 모두 함께 삭제되고 복구할 수 없습니다.</p>
+  <button type="submit" class="btn" style="border-color:var(--danger);color:var(--danger);">이슈 삭제</button>
+</form>
+{% endblock %}

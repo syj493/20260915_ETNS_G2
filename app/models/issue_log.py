@@ -13,6 +13,7 @@ ACTION_LABELS = {
     "vendor_response": "업체 답변",
     "attachment_added": "파일 첨부",
     "closed": "이슈 종결",
+    "edited": "이슈 정보 수정",
 }
 
 

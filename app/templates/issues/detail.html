@@ -13,6 +13,9 @@
     {% elif issue.is_sla_warning %}<span class="badge-sla warning">⏰ SLA 임박 ({{ issue.hours_until_due }}h)</span>
     {% endif %}
     {% if issue.is_long_pending %}<span class="badge-sla warning">장기 미처리</span>{% endif %}
+    {% if current_user.is_admin %}
+    <a href="{{ url_for('issues.edit_issue', issue_id=issue.id) }}" class="btn small">수정 / 삭제</a>
+    {% endif %}
   </div>
 </div>
 
